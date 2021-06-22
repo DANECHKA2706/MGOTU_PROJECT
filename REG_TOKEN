@@ -1,0 +1,59 @@
+<?php
+if (isset($_POST['submit'])){
+  $login = $_POST['login'];
+  $password = $_POST['password'];
+  $token = $_POST['token'];
+
+  $connection = mysqli_connect('localhost', 'root', '', 'user_data');
+
+  $select_query = "SELECT * FROM users WHERE login = '$login';";
+  $select_query_result = mysqli_query($connection, $select_query);
+
+  if(mysqli_num_rows($select_query_result) > 0){
+    echo "Этот аккаунт уже существует, придумайте другой логин";
+  }else {
+
+    if($login == "" OR $password == "") {
+      echo "Поля не должны быть пустыми!"; 
+    }else{
+
+      $query = "INSERT INTO users (login, password) VALUES ('$login', '$password')";
+      session_start();
+      $_SESSION['logined'] = $login;
+      if (mysqli_query($connection, $query)) {
+        echo "New record created successfully";
+      }
+      ////////////
+      $configargs = array(
+        "config" => "C:/xampp/php/extras/openssl/openssl.cnf",
+        'private_key_bits'=> 1024,
+        'default_md' => "sha256",
+      );
+
+      $res = openssl_pkey_new($configargs);
+      openssl_pkey_export($res, $privKey,NULL,$configargs);
+      echo $privKey;
+
+      $connection = mysqli_connect('localhost', 'root', '', 'user_data');
+      $select_query = "SELECT * FROM users WHERE token = '$privKey';";
+      $select_query_result = mysqli_query($connection, $select_query);
+      if(mysqli_num_rows($select_query_result) > 0){
+        echo "Ключ уже создан";
+      }else {
+        echo $login;
+        $query = "UPDATE users SET token = '$privKey' WHERE login = '$login';" ;
+        if ($connection->query($query) === TRUE) {
+          echo "Record updated successfully";
+        } else {
+          echo "Error updating record: " . $connection->error;
+        }
+      }
+      ////////////
+      header("location: hyinya3.php");
+    }
+
+    
+  }
+}
+
+?>
